@@ -71,8 +71,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* ===== Meet The Team Section ===== */}
-      // frontend/src/pages/About.jsx (replace the old team section with this)
+     
 
       {/* ===== About the Creator Section ===== */}
       <section className="bg-gray-50 dark:bg-slate-800">
