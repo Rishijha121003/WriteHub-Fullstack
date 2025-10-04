@@ -29,12 +29,17 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+
     instagram: { type: String, default: "" },
     linkedin: { type: String, default: "" },
     github: { type: String, default: "" },
     facebook: { type: String, default: "" },
 
-
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    }
 }, { timestamps: true })
 
 export const User = mongoose.model("User", userSchema)

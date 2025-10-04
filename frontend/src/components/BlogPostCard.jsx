@@ -8,7 +8,7 @@ const BlogPostCard = ({ post }) => {
     return (
         <div className="border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 dark:bg-slate-800 dark:border-gray-700">
             <Link to={`/blog/${post._id}`}>
-               <img src={post.coverImage || 'https://via.placeholder.com/800x400.png?text=WriteHub'} alt={post.title} className="w-full h-48 object-cover" />
+              <img src={post.coverImage || 'https://placehold.co/800x400/EEE/31343C?text=WriteHub'} alt={post.title} className="w-full h-48 object-cover" />
             </Link>
             <div className="p-4">
                 <h2 className="text-xl font-bold mb-2 dark:text-white">{post.title}</h2>

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // 1. useNavigate ko import kiya
+import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../assets/logo.png';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Search } from 'lucide-react';
 import { FaMoon, FaSun } from "react-icons/fa";
-import { useAuthContext } from '../context/AuthContext'; // 2. AuthContext ko import kiya
+import { useAuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
-  // 3. 'const user = false' ko AuthContext se replace kiya
   const { authUser, setAuthUser } = useAuthContext();
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState(""); 
 
-  // Dark mode logic (yeh bilkul theek hai)
+  // Dark mode logic
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -27,7 +27,7 @@ const Navbar = () => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);
 
-  // 4. Logout ka function add kiya
+  // Logout ka function
   const handleLogout = async () => {
     try {
       const res = await fetch('/api/v1/user/logout', {
@@ -37,12 +37,21 @@ const Navbar = () => {
       const data = await res.json();
       if (data.success === false) throw new Error(data.message);
       
-      setAuthUser(null); // Global state se user hata do
+      setAuthUser(null);
       navigate('/login');
     } catch (error) {
       console.error("Logout failed:", error.message);
     }
   };
+
+  // Search ka function
+   const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (searchTerm.trim()) {
+            navigate(`/search?q=${searchTerm.trim()}`);
+            setSearchTerm("");
+        }
+    };
 
   return (
     <div className='py-2 fixed w-full dark:bg-gray-800 dark:border-b-gray-600 border-b-2 border-gray-300 bg-white z-50'>
@@ -56,19 +65,23 @@ const Navbar = () => {
               <h1 className='font-bold text-2xl md:text-3xl dark:text-white'>WriteHub</h1>
             </div>
           </Link>
-          <div className="relative hidden md:block">
+
+          {/* Search Bar - UPDATED SECTION */}
+          <form onSubmit={handleSearchSubmit} className="relative hidden md:block">
             <Input
               type="text"
               placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="border border-gray-700 dark:bg-gray-900 bg-gray-300 w-[300px] rounded-full px-4 py-2 pr-12"
             />
             <button
-              type="button"
+              type="submit"
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full hover:bg-gray-800"
             >
               <Search className="w-4 h-4" />
             </button>
-          </div>
+          </form>
         </div>
 
         {/* Nav Section */}
@@ -87,11 +100,19 @@ const Navbar = () => {
               {darkMode ? <FaSun /> : <FaMoon />}
             </Button>
 
-            {/* 5. Conditional rendering ab 'authUser' par depend karega */}
+            {/* Conditional Auth Buttons */}
             {
               authUser ? (
                 // Agar user logged in hai
                 <div className='flex items-center gap-3'>
+                  {authUser.role === 'admin' && (
+                    <Link to="/admin/dashboard">
+                      <Button variant="secondary">Admin Panel</Button>
+                    </Link>
+                  )}
+                  <Link to="/create-post">
+                    <Button variant="outline">Create Post</Button>
+                  </Link>
                   <span className='font-semibold dark:text-white hidden sm:block'>Hi, {authUser.firstName}</span>
                   <Button onClick={handleLogout} variant="destructive">Logout</Button>
                 </div>

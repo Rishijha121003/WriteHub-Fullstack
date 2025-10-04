@@ -19,6 +19,11 @@ const postSchema = new mongoose.Schema({
         type: String, // URL of the image
         default: 'https://via.placeholder.com/800x400.png?text=WriteHub',
     },
+     author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // <-- Yeh 'User' bilkul sahi (case-sensitive) hona chahiye
+        required: true,
+    },
 }, { timestamps: true });
 
 export const Post = mongoose.model("Post", postSchema);
