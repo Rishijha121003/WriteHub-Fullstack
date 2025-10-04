@@ -3,28 +3,52 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
+// Toolbar component (aap ise ek alag file mein bhi rakh sakte hain)
+const Toolbar = ({ editor }) => {
+    if (!editor) return null;
+    return (
+        <div className="border border-gray-300 rounded-t-lg p-2 flex gap-2 dark:border-gray-600">
+            <Button type="button" onClick={() => editor.chain().focus().toggleBold().run()} variant={editor.isActive('bold') ? 'default' : 'outline'}>Bold</Button>
+            <Button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} variant={editor.isActive('italic') ? 'default' : 'outline'}>Italic</Button>
+            <Button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} variant={editor.isActive('heading', { level: 2 }) ? 'default' : 'outline'}>H2</Button>
+            <Button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} variant={editor.isActive('bulletList') ? 'default' : 'outline'}>List</Button>
+        </div>
+    );
+};
 
 const EditPost = () => {
-    const { id } = useParams(); // URL se post ki ID nikalo
-    const [formData, setFormData] = useState({ title: '', content: '' });
+    const { id } = useParams();
+    const [title, setTitle] = useState('');
     const [coverImageFile, setCoverImageFile] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // 1. Post ka purana data fetch karo
+    const editor = useEditor({
+        extensions: [StarterKit],
+        content: '', // Shuru mein khaali rakho, data fetch karke daalenge
+        editorProps: {
+            attributes: {
+                class: 'prose dark:prose-invert min-h-[300px] w-full rounded-b-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-4 focus:outline-none',
+            },
+        },
+    });
+
+    // Post ka purana data fetch karke editor mein daalo
     useEffect(() => {
+        if (!id || !editor) return;
+
         const fetchPostData = async () => {
             try {
                 const res = await fetch(`/api/v1/posts/${id}`);
                 const data = await res.json();
                 if (data.success) {
-                    setFormData({
-                        title: data.post.title,
-                        content: data.post.content,
-                    });
+                    setTitle(data.post.title);
+                    editor.commands.setContent(data.post.content); // Editor mein content set karo
                 } else {
                     throw new Error(data.message);
                 }
@@ -33,23 +57,16 @@ const EditPost = () => {
             }
         };
         fetchPostData();
-    }, [id]);
+    }, [id, editor]);
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
 
-    const handleFileChange = (e) => {
-        setCoverImageFile(e.target.files[0]);
-    };
-
-    // 2. Form submit hone par 'PUT' request bhejo
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+        const content = editor.getHTML();
+
         const dataToSend = new FormData();
-        dataToSend.append('title', formData.title);
-        dataToSend.append('content', formData.content);
+        dataToSend.append('title', title);
+        dataToSend.append('content', content);
         if (coverImageFile) {
             dataToSend.append('coverImage', coverImageFile);
         }
@@ -57,8 +74,8 @@ const EditPost = () => {
         try {
             setLoading(true);
             setError(null);
-            const res = await fetch(`/api/v1/posts/${id}`, { // URL mein ID use karo
-                method: 'PUT', // Method ko 'PUT' rakho
+            const res = await fetch(`/api/v1/posts/${id}`, {
+                method: 'PUT',
                 body: dataToSend,
                 credentials: 'include',
             });
@@ -67,50 +84,33 @@ const EditPost = () => {
                 throw new Error(data.message);
             }
             setLoading(false);
-            navigate(`/blog/${id}`); // Update ke baad wapas post page par bhej do
+            navigate(`/blog/${id}`);
         } catch (err) {
             setLoading(false);
-setError(err.message);
+            setError(err.message);
         }
     };
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4">
             <Card className="w-full p-6 shadow-lg rounded-2xl dark:bg-gray-800 dark:border-gray-600">
-                <CardHeader>
-                    <CardTitle><h1 className="text-center text-3xl font-bold">Edit Your Post</h1></CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle><h1 className="text-center text-3xl font-bold">Edit Your Post</h1></CardTitle></CardHeader>
                 <CardContent>
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
                             <Label htmlFor="title" className="text-lg">Title</Label>
-                            <Input
-                                id="title" type="text"
-                                className="dark:border-gray-600 dark:bg-gray-700 mt-2"
-                                onChange={handleChange}
-                                value={formData.title} // 3. Value ko state se jodo
-                                required
-                            />
+                            <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
                         </div>
                         <div>
-                            <Label htmlFor="content" className="text-lg">Content</Label>
-                            <Textarea
-                                id="content"
-                                className="dark:border-gray-600 dark:bg-gray-700 mt-2 min-h-[300px]"
-                                onChange={handleChange}
-                                value={formData.content} // 3. Value ko state se jodo
-                                required
-                            />
+                            <Label className="text-lg">Content</Label>
+                            <Toolbar editor={editor} />
+                            <EditorContent editor={editor} />
                         </div>
                         <div>
                             <Label htmlFor="coverImageFile" className="text-lg">Change Cover Image (Optional)</Label>
-                            <Input
-                                id="coverImageFile" type="file"
-                                className="dark:border-gray-600 dark:bg-gray-700 mt-2 file:text-white"
-                                onChange={handleFileChange}
-                            />
+                            <Input id="coverImageFile" type="file" onChange={(e) => setCoverImageFile(e.target.files[0])} />
                         </div>
-                        <Button type="submit" className="w-full text-lg py-6" disabled={loading}>
+                        <Button type="submit" className="w-full text-lg py-6" disabled={loading || !editor}>
                             {loading ? 'Updating...' : 'Update Post'}
                         </Button>
                         {error && <p className="text-red-500 text-sm text-center">{error}</p>}

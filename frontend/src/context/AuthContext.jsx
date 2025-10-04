@@ -1,20 +1,41 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
-// 1. Global box (Context) banaya
 export const AuthContext = createContext();
 
-// 2. Ek custom hook banaya taaki context ko use karna aasan ho
 export const useAuthContext = () => {
     return useContext(AuthContext);
 };
 
-// 3. Provider component banaya jo poore app ko user data dega
 export const AuthContextProvider = ({ children }) => {
-    // Shuru mein, koi user logged in nahi hai
     const [authUser, setAuthUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    // YEH useEffect SABSE ZAROORI HAI
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            try {
+                const res = await fetch('/api/v1/user/profile', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setAuthUser(data.user);
+                } else {
+                    setAuthUser(null);
+                }
+            } catch (error) {
+                console.error("Auth check failed:", error);
+                setAuthUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuthStatus();
+    }, []); // Empty array ka matlab yeh sirf ek baar chalega jab app load hoga
 
     return (
-        <AuthContext.Provider value={{ authUser, setAuthUser }}>
+        <AuthContext.Provider value={{ authUser, setAuthUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

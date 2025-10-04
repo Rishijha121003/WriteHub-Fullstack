@@ -6,6 +6,8 @@ import userRoute from './routes/user.routes.js'
 import postRoute from './routes/post.routes.js';
 import cookieParser from 'cookie-parser';
 import adminRoutes from './routes/admin.routes.js';
+import commentRoutes from './routes/comment.routes.js';
+
 dotenv.config()
 const app = express()
 app.use(cors({
@@ -29,3 +31,4 @@ connectDB().then(() => {
 app.use("/api/v1/user", userRoute)
 app.use("/api/v1/posts", postRoute);
 app.use("/api/v1/admin", adminRoutes);  
+app.use("/api/v1/comments", commentRoutes);

@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FileText } from 'lucide-react'; // 1. Lucide icons ko import kiya
+import { Users, FileText } from 'lucide-react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"; // 2. Shadcn Table ko import kiya
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
+import toast from 'react-hot-toast'; // 1. react-hot-toast ko import kiya
 
-// 3. StatCard component ko icon ke saath update kiya
+// StatCard component (no change needed here)
 const StatCard = ({ title, value, icon: Icon }) => (
     <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -28,7 +24,7 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0 });
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(null); // We can still keep this for major errors
 
     const fetchData = async () => {
         try {
@@ -43,6 +39,7 @@ const AdminDashboard = () => {
             if (statsData.success) setStats(statsData.stats);
         } catch (err) {
             setError(err.message);
+            toast.error("Failed to fetch dashboard data."); // Error toast
         } finally {
             setLoading(false);
         }
@@ -63,17 +60,19 @@ const AdminDashboard = () => {
             if (data.success) {
                 setUsers(users.filter(user => user._id !== userId));
                 setStats(prevStats => ({ ...prevStats, totalUsers: prevStats.totalUsers - 1 }));
-                alert("User deleted successfully!");
+                toast.success("User deleted successfully!"); // 2. alert() ki jagah toast.success()
             } else {
                 throw new Error(data.message);
             }
         } catch (err) {
+            toast.error(err.message); // 3. Error aane par toast.error() dikhana
             setError(err.message);
         }
     };
 
     if (loading) return <div className="text-center py-20">Loading Dashboard...</div>;
-    if (error) return <div className="text-center py-20 text-red-500">Error: {error}</div>;
+    // Main error display agar poora page hi fail ho jaaye
+    if (error && users.length === 0) return <div className="text-center py-20 text-red-500">Error: {error}</div>;
 
     return (
         <div className="max-w-7xl mx-auto py-10 px-4 space-y-8">
@@ -83,7 +82,6 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Users" value={stats.totalUsers} icon={Users} />
                 <StatCard title="Total Posts" value={stats.totalPosts} icon={FileText} />
-                {/* Yahan aur bhi cards aa sakte hain */}
             </div>
 
             {/* Users Table */}
@@ -91,7 +89,6 @@ const AdminDashboard = () => {
                 <h2 className="text-2xl font-bold mb-4 dark:text-white">Manage Users</h2>
                 <Card className="shadow-lg">
                     <CardContent className="p-0">
-                        {/* 4. Poore HTML table ko Shadcn ke Table component se replace kiya */}
                         <Table>
                             <TableHeader>
                                 <TableRow>

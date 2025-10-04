@@ -1,9 +1,9 @@
-// frontend/src/pages/SinglePostPage.jsx
-
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // useNavigate ko import karo
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
+import CommentSection from '../components/CommentSection';
+import toast from 'react-hot-toast'; // 1. toast ko import kiya
 
 const SinglePostPage = () => {
     const { id } = useParams();
@@ -14,7 +14,6 @@ const SinglePostPage = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // ... fetchPost function waisa hi rahega ...
         const fetchPost = async () => {
             try {
                 setLoading(true);
@@ -29,7 +28,6 @@ const SinglePostPage = () => {
     }, [id]);
 
     const handleDelete = async () => {
-        // Delete karne se pehle confirmation poocho
         if (!window.confirm("Are you sure you want to delete this post?")) {
             return;
         }
@@ -42,28 +40,26 @@ const SinglePostPage = () => {
             if (data.success === false) {
                 throw new Error(data.message);
             }
-            // Success par blogs page par bhej do
+            toast.success("Post deleted successfully!"); // 2. Success toast
             navigate('/blogs');
         } catch (err) {
             console.error("Failed to delete post:", err.message);
+            toast.error(err.message); // 3. Error toast
             setError(err.message);
         }
     };
 
-    // ... loading, error, post not found checks ...
     if (loading) return <div className="text-center py-20">Loading post...</div>;
     if (error) return <div className="text-center py-20 text-red-500">Error: {error}</div>;
     if (!post) return <div className="text-center py-20">Post not found.</div>;
 
-
     const isAuthor = authUser && post && authUser._id === post.author._id;
+    
+    const sanitizedContent = post.content; // Assuming DOMPurify will be used later if needed
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4">
-            {/* Title */}
             <h1 className="text-4xl md:text-5xl font-bold mb-4 dark:text-white">{post.title}</h1>
-
-            {/* Author, Date, and Action Buttons */}
             <div className="flex justify-between items-center text-gray-500 dark:text-gray-400 mb-8">
                 <div>
                     <span>By {post.author.firstName} {post.author.lastName}</span>
@@ -75,19 +71,16 @@ const SinglePostPage = () => {
                         <Link to={`/edit-post/${post._id}`}>
                             <Button variant="outline">Edit Post</Button>
                         </Link>
-                        {/* Naya Delete Button */}
                         <Button variant="destructive" onClick={handleDelete}>Delete Post</Button>
                     </div>
                 )}
             </div>
-
-            {/* ... baaki ka component waisa hi rahega ... */}
             <img src={post.coverImage || 'https://placehold.co/1200x600/EEE/31343C?text=WriteHub'} alt={post.title} className="w-full h-96 object-cover rounded-lg mb-8" />
-            <div className="prose dark:prose-invert max-w-none text-lg leading-relaxed">
-                {post.content.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">{paragraph}</p>
-                ))}
-            </div>
+            <div
+                className="prose dark:prose-invert max-w-none text-lg leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            />
+            <CommentSection postId={id} />
         </div>
     );
 };

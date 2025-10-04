@@ -24,6 +24,10 @@ const postSchema = new mongoose.Schema({
         ref: 'User', // <-- Yeh 'User' bilkul sahi (case-sensitive) hona chahiye
         required: true,
     },
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment'
+    }]
 }, { timestamps: true });
 
 export const Post = mongoose.model("Post", postSchema);

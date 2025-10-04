@@ -1,11 +1,15 @@
-// backend/routes/user.routes.js
-import express from "express";
-import {login, logout, register } from "../controller/user.controller.js";
+import express from 'express';
+// 'getProfile' ko yahan import karna zaroori hai
+import { register, login, logout, getProfile } from '../controller/user.controller.js';
+import { protectRoute } from '../middleware/protectRoute.js';
 
-const router = express.Router()
+const router = express.Router();
 
-router.route("/signup").post(register); // <-- Yahan change kiya hai
-router.route("/login").post(login);
-router.route("/logout").post(logout) // Ise bhi POST kar dena for best practice
+router.post('/signup', register);
+router.post('/login', login);
+router.post('/logout', logout);
 
-export default router
+// Yeh route add karna zaroori hai
+router.get('/profile', protectRoute, getProfile);
+
+export default router;

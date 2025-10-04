@@ -38,15 +38,30 @@ export const createPost = async (req, res) => {
 };
 
 export const getAllPosts = async (req, res) => {
-    console.log("--> Request received for getAllPosts");
     try {
-        console.log("--> Finding posts from database...");
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page - 1) * limit;
+
+        // Saare posts ka total count nikaalo
+        const totalPosts = await Post.countDocuments();
+        const totalPages = Math.ceil(totalPosts / limit);
+
         const posts = await Post.find({})
             .populate('author', 'firstName lastName')
-            .sort({ createdAt: -1 });
-        console.log(`--> Found ${posts.length} posts.`);
+            .sort({ createdAt: -1 })
+            .skip(skip) // Itne posts ko chhod do
+            .limit(limit); // Sirf itne posts bhejo
 
-        res.status(200).json({ success: true, posts });
+        res.status(200).json({
+            success: true,
+            posts,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalPosts: totalPosts
+            }
+        });
 
     } catch (error) {
         console.error("Error in getAllPosts controller: ", error.message);
@@ -229,6 +244,21 @@ export const getTopAuthors = async (req, res) => {
 
     } catch (error) {
         console.error("Error in getTopAuthors controller: ", error.message);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+// backend/controller/post.controller.js
+
+export const getMyPosts = async (req, res) => {
+    try {
+        // req.user._id protectRoute middleware se aa raha hai
+        const posts = await Post.find({ author: req.user._id })
+            .sort({ createdAt: -1 });
+            
+        res.status(200).json({ success: true, posts });
+
+    } catch (error) {
+        console.error("Error in getMyPosts controller: ", error.message);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
